@@ -1,7 +1,9 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { LayoutDashboard, Package, Users, ShoppingCart, LogOut } from "lucide-react"; // Import Icons
 
-const Sidebar = () => {
+const Sidebar = ({ onClose }) => {
   const navigate = useNavigate();
+  const location = useLocation(); // To highlight active link
   const user = JSON.parse(localStorage.getItem("user"));
 
   const handleLogout = () => {
@@ -10,40 +12,56 @@ const Sidebar = () => {
     navigate("/");
   };
 
-  return (
-    <div className="bg-gray-800 text-white w-64 min-h-screen p-4 flex flex-col fixed md:relative hidden md:flex">
-      {/* App Title */}
-      <h1 className="text-2xl font-bold mb-8 text-center text-blue-400">SokoSync</h1>
+  // Helper to style active links
+  const getLinkClass = (path) => {
+    const isActive = location.pathname === path;
+    return `flex items-center gap-3 py-3 px-4 rounded transition ${
+      isActive ? "bg-blue-600 text-white" : "hover:bg-gray-700 text-gray-300"
+    }`;
+  };
 
-      {/* User Info */}
-      <div className="mb-8 text-sm text-gray-400 text-center">
-        Logged in as: <br />
-        <span className="text-white font-semibold">{user?.email}</span>
+  return (
+    <div className="flex flex-col h-full p-4">
+      {/* Title */}
+      <div className="mb-8 text-center hidden md:block">
+        <h1 className="text-2xl font-bold text-blue-400">SokoSync</h1>
+        <p className="text-xs text-gray-500 mt-1">SME Inventory Manager</p>
       </div>
 
-      {/* Navigation Links */}
+      {/* Navigation */}
       <nav className="flex-1 space-y-2">
-        <Link to="/dashboard" className="block py-2.5 px-4 rounded hover:bg-gray-700 transition">
-          📊 Dashboard
+        <Link to="/dashboard" className={getLinkClass("/dashboard")} onClick={onClose}>
+          <LayoutDashboard size={20} />
+          Dashboard
         </Link>
-        <Link to="/inventory" className="block py-2.5 px-4 rounded hover:bg-gray-700 transition">
-          📦 Inventory
+        <Link to="/inventory" className={getLinkClass("/inventory")} onClick={onClose}>
+          <Package size={20} />
+          Inventory
         </Link>
-        <Link to="/customers" className="block py-2.5 px-4 rounded hover:bg-gray-700 transition">
-          👥 Customers  {/* <-- Fixed typo here */}
+        <Link to="/customers" className={getLinkClass("/customers")} onClick={onClose}>
+          <Users size={20} />
+          Customers
         </Link>
-        <Link to="/sales" className="block py-2.5 px-4 rounded hover:bg-gray-700 transition">
-          💰 Record Sale
+        <Link to="/sales" className={getLinkClass("/sales")} onClick={onClose}>
+          <ShoppingCart size={20} />
+          Record Sale
         </Link>
       </nav>
 
-      {/* Logout Button */}
-      <button
-        onClick={handleLogout}
-        className="mt-auto bg-red-600 hover:bg-red-700 py-2 px-4 rounded text-white w-full"
-      >
-        Logout
-      </button>
+      {/* User Profile & Logout */}
+      <div className="mt-auto pt-6 border-t border-gray-700">
+        <div className="mb-4 px-2">
+            <p className="text-xs text-gray-500 uppercase">Logged in as</p>
+            <p className="text-sm font-semibold text-white truncate">{user?.email}</p>
+        </div>
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-2 w-full bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded transition"
+        >
+          <LogOut size={18} />
+          Logout
+        </button>
+      </div>
     </div>
   );
 };
