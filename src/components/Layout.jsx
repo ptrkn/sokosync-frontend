@@ -5,7 +5,7 @@ import { Menu, X } from "lucide-react";
 const Layout = ({ children, title }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // Lock body scroll when mobile menu is open
+  // Lock body scroll when mobile menu is open to prevent background scrolling
   useEffect(() => {
     if (isSidebarOpen) {
       document.body.style.overflow = 'hidden';

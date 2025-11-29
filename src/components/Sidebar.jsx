@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { LayoutDashboard, Package, Users, ShoppingCart, LogOut, Store } from "lucide-react";
+import { LayoutDashboard, Package, Users, ShoppingCart, LogOut, Store, Receipt } from "lucide-react";
 
 const Sidebar = ({ onClose }) => {
   const navigate = useNavigate();
@@ -13,11 +13,13 @@ const Sidebar = ({ onClose }) => {
   };
 
   // Navigation Config
+  // I added the "Transactions" link here
   const navItems = [
     { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
     { name: "Inventory", path: "/inventory", icon: Package },
     { name: "Customers", path: "/customers", icon: Users },
     { name: "Record Sale", path: "/sales", icon: ShoppingCart },
+    { name: "History", path: "/transactions", icon: Receipt }, // <-- NEW LINK
   ];
 
   // Helper for Active Styles

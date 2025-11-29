@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import Inventory from "./pages/Inventory";
 import Customers from "./pages/Customers";
 import Sales from "./pages/Sales";
+import Transactions from "./pages/Transactions";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 // --- UTILITIES ---
@@ -37,7 +38,7 @@ const ScrollToTop = () => {
  */
 const NotFound = () => (
   <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 text-center p-6 animate-in fade-in duration-500">
-    <div className="bg-red-100 p-4 rounded-full mb-6 text-red-500 shadow-sm">
+    <div className="bg-red-100 p-4 rounded-full mb-6 text-red-50 shadow-sm">
       <AlertTriangle size={48} />
     </div>
     <h1 className="text-2xl font-bold text-gray-900 mb-2">Page Not Found</h1>
@@ -102,6 +103,15 @@ function App() {
           element={
             <ProtectedRoute>
               <Sales />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/transactions"
+          element={
+            <ProtectedRoute>
+              <Transactions />
             </ProtectedRoute>
           }
         />

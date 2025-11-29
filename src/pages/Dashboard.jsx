@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import Layout from "../components/Layout";
-import { DollarSign, ShoppingBag, TrendingUp, RefreshCw, Calendar, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
+import { DollarSign, ShoppingBag, TrendingUp, RefreshCw, Calendar, ArrowRight, AlertTriangle, CheckCircle, Package } from "lucide-react";
 
 // --- UTILITIES ---
 
@@ -21,11 +22,10 @@ const getTodayDate = () => {
   });
 };
 
-// --- SUB-COMPONENTS (For cleaner code) ---
+// --- SUB-COMPONENTS ---
 
 const WelcomeBanner = ({ userName, onRefresh, isRefreshing, isLoading }) => (
   <div className="bg-gradient-to-r from-blue-700 to-blue-600 rounded-2xl p-6 text-white shadow-lg mb-8 relative overflow-hidden">
-    {/* Decorative Circle */}
     <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-white opacity-10 rounded-full blur-xl pointer-events-none"></div>
     
     <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
@@ -67,25 +67,49 @@ const StatCard = ({ title, value, subtext, icon: Icon, colorClass, bgClass }) =>
   </div>
 );
 
-const GrowthCard = () => (
-  <div className="group bg-gray-900 p-6 rounded-2xl shadow-md text-white flex flex-col justify-between hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer relative overflow-hidden">
-    <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500 opacity-10 rounded-full blur-xl -mr-10 -mt-10"></div>
-    
-    <div className="flex justify-between items-start relative z-10">
-      <div>
-         <p className="text-blue-300 text-xs font-bold uppercase tracking-wide">Growth Tip</p>
-         <h3 className="text-lg font-bold mt-1 leading-tight">Record every sale <br/> to track profit.</h3>
+const LowStockCard = ({ lowStockItems }) => (
+  <Link to="/inventory" className="block h-full">
+    <div className={`group p-6 rounded-2xl shadow-sm border h-full transition-all duration-300 hover:-translate-y-1 hover:shadow-md relative overflow-hidden ${
+      lowStockItems.length > 0 ? "bg-red-50 border-red-100" : "bg-emerald-50 border-emerald-100"
+    }`}>
+      <div className="flex justify-between items-start relative z-10">
+        <div>
+           <p className={`text-xs font-bold uppercase tracking-wide ${lowStockItems.length > 0 ? "text-red-600" : "text-emerald-600"}`}>
+             Inventory Status
+           </p>
+           
+           {lowStockItems.length > 0 ? (
+             <>
+               <h3 className="text-lg font-bold mt-1 text-red-900">
+                 {lowStockItems.length} items low on stock
+               </h3>
+               <p className="text-sm text-red-700 mt-1">Restock soon to avoid losing sales.</p>
+             </>
+           ) : (
+             <>
+               <h3 className="text-lg font-bold mt-1 text-emerald-900">
+                 Everything looks good!
+               </h3>
+               <p className="text-sm text-emerald-700 mt-1">You are fully stocked.</p>
+             </>
+           )}
+        </div>
+        
+        <div className={`p-2 rounded-lg ${lowStockItems.length > 0 ? "bg-red-100 text-red-600" : "bg-emerald-100 text-emerald-600"}`}>
+          {lowStockItems.length > 0 ? <AlertTriangle size={24} /> : <CheckCircle size={24} />}
+        </div>
       </div>
-      <div className="bg-gray-800 p-2 rounded-lg group-hover:bg-gray-700 transition-colors border border-gray-700">
-        <TrendingUp size={20} className="text-yellow-400" />
-      </div>
+      
+      {lowStockItems.length > 0 && (
+        <div className="mt-4 pt-4 border-t border-red-200/60">
+           <div className="flex items-center gap-2 text-sm font-medium text-red-800 group-hover:underline">
+              <span>View Low Stock List</span>
+              <ArrowRight size={16} />
+           </div>
+        </div>
+      )}
     </div>
-    
-    <div className="mt-4 flex items-center gap-2 text-sm text-gray-400 group-hover:text-white transition-colors">
-       <span>View Analytics</span>
-       <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
-    </div>
-  </div>
+  </Link>
 );
 
 const DashboardSkeleton = () => (
@@ -106,27 +130,34 @@ const DashboardSkeleton = () => (
 
 const Dashboard = () => {
   const [stats, setStats] = useState({ totalRevenue: 0, totalUnits: 0 });
+  const [lowStock, setLowStock] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Safe User Name Extraction
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const firstName = user?.name ? user.name.split(" ")[0] : "Merchant";
 
-  const fetchStats = async () => {
+  const fetchDashboardData = async () => {
     if (!isRefreshing) setLoading(true);
     const token = localStorage.getItem("token");
+    
     try {
-      const response = await fetch("http://localhost:5000/api/reports/summary/today", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await response.json();
-      if (response.ok) {
-        setStats(data);
+      // Fetch Summary and Low Stock in parallel
+      const [summaryRes, lowStockRes] = await Promise.all([
+        fetch("http://localhost:5000/api/reports/summary/today", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("http://localhost:5000/api/reports/low-stock", { headers: { Authorization: `Bearer ${token}` } })
+      ]);
+
+      if (summaryRes.ok && lowStockRes.ok) {
+        const summaryData = await summaryRes.json();
+        const lowStockData = await lowStockRes.json();
+        
+        setStats(summaryData);
+        setLowStock(lowStockData);
         setError("");
       } else {
-        setError("Failed to load stats");
+        setError("Failed to load dashboard data");
       }
     } catch (err) {
       setError("Server connection error. Please try again.");
@@ -137,19 +168,18 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    fetchStats();
+    fetchDashboardData();
   }, []);
 
   const handleRefresh = () => {
     setIsRefreshing(true);
-    fetchStats();
+    fetchDashboardData();
   };
 
   return (
     <Layout title="Dashboard">
-      <div className="max-w-5xl mx-auto animate-in fade-in duration-500">
+      <div className="max-w-6xl mx-auto animate-in fade-in duration-500">
         
-        {/* Welcome Section */}
         <WelcomeBanner 
           userName={firstName} 
           onRefresh={handleRefresh} 
@@ -157,25 +187,23 @@ const Dashboard = () => {
           isLoading={loading}
         />
 
-        {/* Error State */}
         {error && (
           <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-r-lg mb-6 shadow-sm flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="block w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
               <p className="text-sm font-medium">{error}</p>
             </div>
-            <button onClick={fetchStats} className="text-sm font-bold underline hover:text-red-800">Retry</button>
+            <button onClick={fetchDashboardData} className="text-sm font-bold underline hover:text-red-800">Retry</button>
           </div>
         )}
 
-        {/* Main Content */}
         {loading && !isRefreshing ? (
           <DashboardSkeleton />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             
             <StatCard 
-              title="Total Revenue" 
+              title="Today's Revenue" 
               value={formatCurrency(stats.totalRevenue)} 
               icon={DollarSign}
               bgClass="bg-emerald-100"
@@ -183,7 +211,7 @@ const Dashboard = () => {
             />
 
             <StatCard 
-              title="Units Sold" 
+              title="Units Sold Today" 
               value={stats.totalUnits} 
               subtext="items"
               icon={ShoppingBag}
@@ -191,10 +219,45 @@ const Dashboard = () => {
               colorClass="text-blue-600"
             />
 
-            <GrowthCard />
+            {/* Replaced generic Growth Tip with actual Low Stock Data */}
+            <LowStockCard lowStockItems={lowStock} />
             
           </div>
         )}
+
+        {/* Quick Links Section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+           <Link to="/sales" className="block group">
+              <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all flex items-center justify-between">
+                 <div className="flex items-center gap-4">
+                    <div className="bg-purple-100 p-3 rounded-xl text-purple-600 group-hover:scale-110 transition-transform">
+                       <ShoppingBag size={24} />
+                    </div>
+                    <div>
+                       <h3 className="font-bold text-gray-900">Record New Sale</h3>
+                       <p className="text-sm text-gray-500">Process a transaction</p>
+                    </div>
+                 </div>
+                 <ArrowRight size={20} className="text-gray-400 group-hover:text-purple-600 group-hover:translate-x-1 transition-all" />
+              </div>
+           </Link>
+
+           <Link to="/inventory" className="block group">
+              <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all flex items-center justify-between">
+                 <div className="flex items-center gap-4">
+                    <div className="bg-orange-100 p-3 rounded-xl text-orange-600 group-hover:scale-110 transition-transform">
+                       <Package size={24} />
+                    </div>
+                    <div>
+                       <h3 className="font-bold text-gray-900">Manage Inventory</h3>
+                       <p className="text-sm text-gray-500">Update stock levels</p>
+                    </div>
+                 </div>
+                 <ArrowRight size={20} className="text-gray-400 group-hover:text-orange-600 group-hover:translate-x-1 transition-all" />
+              </div>
+           </Link>
+        </div>
+
       </div>
     </Layout>
   );
