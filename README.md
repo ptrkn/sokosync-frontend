@@ -1,2 +1,2 @@
-#SokoSync - Frontend
-#React + Vite + Tailwind CSS
+# SokoSync - Frontend
+# React + Vite + Tailwind CSS
